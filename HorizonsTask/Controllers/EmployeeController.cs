@@ -17,13 +17,22 @@ namespace HorizonsTask.Controllers
         private HorizonsContext db = new HorizonsContext();
 
         // GET: api/Employee
-        public IQueryable<Employee> GetEmployees()
+        public IHttpActionResult GetEmployees()
         {
-            return db.Employees;
+            
+            var emps = db.Employees.ToList();
+            if (emps.Count > 0)
+            {
+                return Ok(emps);
+            }
+            else
+            {
+                return NotFound();
+            }
         }
 
         // GET: api/Employee/5
-        [ResponseType(typeof(Employee))]
+        
         public IHttpActionResult GetEmployee(int id)
         {
             Employee employee = db.Employees.Include(e=>e.Department).FirstOrDefault(em=>em.Id==id);
@@ -36,7 +45,7 @@ namespace HorizonsTask.Controllers
         }
 
         // PUT: api/Employee/5
-        [ResponseType(typeof(void))]
+     
         public IHttpActionResult PutEmployee(int id, Employee employee)
         {
             if (!ModelState.IsValid)
@@ -48,7 +57,7 @@ namespace HorizonsTask.Controllers
             {
                 return BadRequest();
             }
-
+            employee.Department = db.Departments.Find(employee.DepartmentId);
             db.Entry(employee).State = EntityState.Modified;
 
             try
@@ -63,7 +72,7 @@ namespace HorizonsTask.Controllers
                 }
                 else
                 {
-                    throw;
+                    return InternalServerError();
                 }
             }
 
@@ -71,7 +80,7 @@ namespace HorizonsTask.Controllers
         }
 
         // POST: api/Employee
-        [ResponseType(typeof(Employee))]
+        
         public IHttpActionResult PostEmployee(Employee employee)
         {
             if (!ModelState.IsValid)
@@ -80,13 +89,25 @@ namespace HorizonsTask.Controllers
             }
             employee.Department = db.Departments.Find(employee.DepartmentId);
             db.Employees.Add(employee);
-            db.SaveChanges();
+            
+            try
+            {
+                db.SaveChanges();
+            }
+            catch (Exception)
+            {
+
+                //error not defined
+                    return InternalServerError();
+              
+            }
+         
 
             return CreatedAtRoute("DefaultApi", new { id = employee.Id }, employee);
         }
 
         // DELETE: api/Employee/5
-        [ResponseType(typeof(Employee))]
+        
         public IHttpActionResult DeleteEmployee(int id)
         {
             Employee employee = db.Employees.Find(id);
@@ -96,19 +117,29 @@ namespace HorizonsTask.Controllers
             }
 
             db.Employees.Remove(employee);
-            db.SaveChanges();
+            try
+            {
+                db.SaveChanges();
+            }
+            catch (Exception)
+            {
+
+                //error not defined
+                return InternalServerError();
+
+            }
 
             return Ok(employee);
         }
 
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                db.Dispose();
-            }
-            base.Dispose(disposing);
-        }
+        //protected override void Dispose(bool disposing)
+        //{
+        //    if (disposing)
+        //    {
+        //        db.Dispose();
+        //    }
+        //    base.Dispose(disposing);
+        //}
 
         private bool EmployeeExists(int id)
         {
